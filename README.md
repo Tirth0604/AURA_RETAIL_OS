@@ -11,6 +11,43 @@ This implementation satisfies all requirements for **IT620 Project Subtask 2**.
 
 ---
 
+## 🚀 Getting Started
+
+### 1. Prerequisites
+Before running the system, ensure you have the following installed:
+*   **Python 3.7+**: [Download here](https://www.python.org/downloads/)
+*   **Tkinter**: Usually included with Python. If not, install via:
+    *   *Windows*: Included by default.
+    *   *Linux*: `sudo apt-get install python3-tk`
+
+### 2. Installation & Setup
+Clone the repository and enter the project directory:
+
+```bash
+# Clone the repository
+git clone https://github.com/Tirth0604/AURA_RETAIL_OS.git
+
+# Enter the directory
+cd AURA_RETAIL_OS
+```
+
+### 3. Running the Dashboard (Recommended)
+The **Interactive Intelligence Dashboard** is the primary way to experience the simulation. It provides a real-time audit of design pattern compliance.
+
+```powershell
+python gui.py
+```
+> **Tip:** Once the window opens, click the **"LAUNCH SYSTEM AUDIT"** button to begin the live demonstration.
+
+### 4. Alternative: Terminal Execution
+To view the engineering logs directly in your console:
+```powershell
+python simulation/simulation.py
+```
+*(Windows Users: If icons do not render, run `$env:PYTHONIOENCODING='utf-8'` first).*
+
+---
+
 ## 🛠️ Key Design Patterns (9/9)
 | Pattern | Implementation Role |
 | :--- | :--- |
@@ -26,53 +63,21 @@ This implementation satisfies all requirements for **IT620 Project Subtask 2**.
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.7 or higher.
-- `tkinter` library (standard with most Python installations).
-
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Tirth0604/AURA_RETAIL_OS.git
-   cd AURA_RETAIL_OS
-   ```
-
-### Running the Dashboard (Recommended for Demos)
-The project includes a professional **Intelligence Dashboard** that tracks design pattern compliance in real-time.
-
-```bash
-python gui.py
-```
-1. Click **"LAUNCH SYSTEM AUDIT"**.
-2. Watch the **Pattern Tracker** on the left light up as the system verifies each design requirement.
-
-### Running via Terminal
-To see the raw engineering logs:
-```bash
-python simulation/simulation.py
-```
-
----
-
 ## 📂 Project Structure
-```text
-aura_retail_os/
-├── core/             # Facade, Command, Singleton
-├── hardware/         # Bridge, Decorator, Abstract Factory
-├── inventory/        # Composite, Proxy
-├── payment/          # Adapter (UPI, CC, Wallet)
-├── persistence/      # JSON/CSV Persistence layer
-├── simulation/       # 5 demonstration scenarios
-├── gui.py            # Interactive Intelligence Dashboard
-└── README.md         # Documentation
-```
+*   `core/` : Core kiosk logic including Facade and Command patterns.
+*   `hardware/` : Hardware abstraction layer and hot-swappable bridge components.
+*   `inventory/` : Secure inventory management using Proxy and Composite patterns.
+*   `payment/` : Unified payment processing adapters.
+*   `persistence/` : Data persistence logic for transactions and inventory.
+*   `simulation/` : Executable scenarios proving all system features.
+*   `gui.py` : The main Interactive Dashboard entry point.
 
 ---
 
 ## 👥 Authors (Group 24: Pixel Pioneers)
-- **Heer Shah** [202512024] - Core Architecture & Facade
-- **Diya Shah** [202512025] - Inventory System & Proxy
-- **Tirth Gandhi** [202512038] - Payment System & Adapters
-- **Nishit Gal** [202512002] - Hardware Abstraction & Factories
+| Name | Enrollment No. | Primary Responsibility |
+| :--- | :--- | :--- |
+| **Heer Shah** | 202512024 | Kiosk Core & Facade Architecture |
+| **Diya Shah** | 202512025 | Inventory System & Secure Proxy |
+| **Tirth Gandhi** | 202512038 | Payment Adapters & Persistence |
+| **Nishit Gal** | 202512002 | Hardware Abstraction & Factories |
