@@ -10,15 +10,15 @@ from payment.payment import UPIAdapter, CreditCardAdapter, DigitalWalletAdapter
 
 # --- Colors and Styles ---
 COLORS = {
-    "bg": "#F4F7F6",          
-    "sidebar": "#E8ECEB",     
-    "card": "#FFFFFF",        
-    "accent": "#5B8FB9",      
-    "accent_dim": "#B6E2D3",  
-    "text": "#2B3A42",        
-    "muted": "#7A8B99",       
-    "success": "#44A08D",     
-    "danger": "#D96C6C",      
+    "bg": "#0B0E14",          
+    "sidebar": "#151921",     
+    "card": "#1C222D",        
+    "accent": "#00E5FF",      
+    "accent_dim": "#004D5C",  
+    "text": "#E1E1E1",        
+    "muted": "#8A94A7",       
+    "success": "#00E676",     
+    "danger": "#FF5252",      
 }
 
 FONTS = {
