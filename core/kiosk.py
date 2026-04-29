@@ -111,11 +111,8 @@ class PurchaseItemCommand(IKioskCommand):
         self._executed = False
 
     def execute(self) -> bool:
-<<<<<<< HEAD
-=======
         print(f"\n  [PurchaseItemCommand] Executing purchase: {self._quantity}x '{self._item_name}'")
 
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
         # 1. Check inventory via proxy
         item = self._kiosk.inventory.get_item(self._item_name, role="kiosk")
         if not item or not item.is_available():
@@ -333,9 +330,5 @@ class KioskInterface:
         print(f"\n[KioskInterface] list_inventory()")
         items = self._kiosk.inventory.list_items(role="kiosk")
         for item in items:
-<<<<<<< HEAD
             print(f"  * {item}")
-=======
-            print(f"  • {item}")
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
         return items

@@ -15,11 +15,7 @@ Decorator Structure:
 from abc import ABC, abstractmethod
 
 
-<<<<<<< HEAD
 # --- Component Interface ---
-=======
-# ─── Component Interface ──────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class HardwareModule(ABC):
     """
@@ -41,11 +37,7 @@ class HardwareModule(ABC):
         pass
 
 
-<<<<<<< HEAD
 # --- Concrete Component ---
-=======
-# ─── Concrete Component ───────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class BaseKioskHardware(HardwareModule):
     """
@@ -63,11 +55,7 @@ class BaseKioskHardware(HardwareModule):
         return "BaseKioskHardware"
 
 
-<<<<<<< HEAD
 # --- Abstract Decorator ---
-=======
-# ─── Abstract Decorator ───────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class HardwareModuleDecorator(HardwareModule, ABC):
     """
@@ -88,11 +76,7 @@ class HardwareModuleDecorator(HardwareModule, ABC):
         return self._base_module.get_module_name()
 
 
-<<<<<<< HEAD
 # --- Concrete Decorators ---
-=======
-# ─── Concrete Decorators ──────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class RefrigerationModule(HardwareModuleDecorator):
     """
@@ -109,11 +93,7 @@ class RefrigerationModule(HardwareModuleDecorator):
 
     def operate(self) -> str:
         base_result = super().operate()
-<<<<<<< HEAD
         return f"{base_result} | RefrigerationModule: maintaining {self._current_temp} deg C (target: {self._temperature} deg C)."
-=======
-        return f"{base_result} | RefrigerationModule: maintaining {self._current_temp}°C (target: {self._temperature}°C)."
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
     def get_status(self) -> dict:
         status = super().get_status()
@@ -129,11 +109,7 @@ class RefrigerationModule(HardwareModuleDecorator):
 
     def regulate(self, new_temp: float) -> None:
         self._temperature = new_temp
-<<<<<<< HEAD
         print(f"  [RefrigerationModule] Target temperature updated to {new_temp} deg C")
-=======
-        print(f"  [RefrigerationModule] Target temperature updated to {new_temp}°C")
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
     def is_active(self) -> bool:
         return self._is_active

@@ -28,11 +28,7 @@ class TransactionStatus(Enum):
     REFUNDED = "REFUNDED"
 
 
-<<<<<<< HEAD
 # --- Target Interface ---
-=======
-# ─── Target Interface ─────────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class IPaymentProvider(ABC):
     """
@@ -67,11 +63,7 @@ class IPaymentProvider(ABC):
         pass
 
 
-<<<<<<< HEAD
 # --- Simulated Third-Party APIs (Adaptees) ---
-=======
-# ─── Simulated Third-Party APIs (Adaptees) ───────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class _LegacyUPIGateway:
     """Simulated third-party UPI gateway with incompatible API."""
@@ -79,11 +71,7 @@ class _LegacyUPIGateway:
     def initiate_upi_transfer(self, vpa: str, rupees: float, note: str) -> str:
         """Returns a raw UPI reference string."""
         ref = f"UPI-{uuid.uuid4().hex[:8].upper()}"
-<<<<<<< HEAD
         print(f"  [LegacyUPIGateway] Transfer Rs.{rupees} to VPA={vpa}, note={note!r} -> ref={ref}")
-=======
-        print(f"  [LegacyUPIGateway] Transfer ₹{rupees} to VPA={vpa}, note={note!r} → ref={ref}")
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
         return ref
 
     def check_upi_ref(self, ref: str) -> bool:
@@ -100,11 +88,7 @@ class _LegacyCreditCardGateway:
     def charge_card(self, card_token: str, amount_paise: int, description: str) -> dict:
         """Returns raw gateway response dict (amount in paise, not rupees)."""
         charge_id = f"CHG-{uuid.uuid4().hex[:8].upper()}"
-<<<<<<< HEAD
         print(f"  [LegacyCreditCardGateway] Charged Rs.{amount_paise/100:.2f} on token={card_token} -> {charge_id}")
-=======
-        print(f"  [LegacyCreditCardGateway] Charged ₹{amount_paise/100:.2f} on token={card_token} → {charge_id}")
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
         return {"charge_id": charge_id, "approved": True, "code": "00"}
 
     def reverse_charge(self, charge_id: str) -> bool:
@@ -118,7 +102,6 @@ class _LegacyDigitalWalletGateway:
     def wallet_debit(self, wallet_id: str, amount: float) -> tuple:
         """Returns (success: bool, txn_ref: str)."""
         txn = f"WALLET-{uuid.uuid4().hex[:8].upper()}"
-<<<<<<< HEAD
         print(f"  [LegacyDigitalWalletGateway] Debited Rs.{amount} from wallet={wallet_id} -> txn={txn}")
         return (True, txn)
 
@@ -128,17 +111,6 @@ class _LegacyDigitalWalletGateway:
 
 
 # --- Abstract Adapter Base ---
-=======
-        print(f"  [LegacyDigitalWalletGateway] Debited ₹{amount} from wallet={wallet_id} → txn={txn}")
-        return (True, txn)
-
-    def wallet_credit(self, wallet_id: str, amount: float, original_txn: str) -> bool:
-        print(f"  [LegacyDigitalWalletGateway] Credited ₹{amount} to wallet={wallet_id} (refund of {original_txn})")
-        return True
-
-
-# ─── Abstract Adapter Base ────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class PaymentAdapter(IPaymentProvider, ABC):
     """
@@ -167,11 +139,7 @@ class PaymentAdapter(IPaymentProvider, ABC):
         return txn["status"] if txn else TransactionStatus.FAILED
 
 
-<<<<<<< HEAD
 # --- Concrete Adapters ---
-=======
-# ─── Concrete Adapters ────────────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 class UPIAdapter(PaymentAdapter):
     """
@@ -264,11 +232,7 @@ class DigitalWalletAdapter(PaymentAdapter):
         return "DigitalWallet"
 
 
-<<<<<<< HEAD
 # --- Transaction Persistence ---
-=======
-# ─── Transaction Persistence ──────────────────────────────────────────────────
->>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 def persist_transaction(record: dict, filepath: str = "transactions.csv") -> None:
     """Append a transaction record to the CSV file."""
