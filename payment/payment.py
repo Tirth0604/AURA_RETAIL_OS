@@ -11,7 +11,7 @@ Adapter Structure:
   Target    -> IPaymentProvider (common interface)
   Adaptee   -> Legacy/third-party payment API classes (simulated)
   Adapter   -> UPIAdapter, CreditCardAdapter, DigitalWalletAdapter
-  Abstract  -> PaymentAdapter (common adapter base)
+  Abstract  -> PaymentAdapter (common adapter base) 
 """
 
 from abc import ABC, abstractmethod

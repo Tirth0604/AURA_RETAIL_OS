@@ -44,6 +44,7 @@ class AuraRetailGUI(tk.Tk):
     def _init_system(self):
         self.registry = CentralRegistry()
         self.registry.initialize()
+        self.cart = {}
         
         self.dispenser = Dispenser(SpiralDispenser(motor_id=1))
         self.proxy = InventoryProxy()
@@ -100,7 +101,7 @@ class AuraRetailGUI(tk.Tk):
         nav_frame.pack(fill="both", expand=True)
 
         self.nav_buttons = {}
-        for key, label in [("hardware", "⚡ Hardware"), ("payment", "💳 Payments"), ("inventory", "📦 Inventory")]:
+        for key, label in [("hardware", "⚡ Hardware"), ("payment", "💳 Payments"), ("inventory", "🛒 Shop & Cart")]:
             btn = tk.Button(nav_frame, text=label, font=FONTS["header"], bg=COLORS["sidebar"], fg=COLORS["muted"], activebackground=COLORS["card"], activeforeground=COLORS["accent"], bd=0, padx=20, pady=12, anchor="w", command=lambda k=key: self._switch_page(k))
             btn.pack(fill="x")
             self.nav_buttons[key] = btn
@@ -277,77 +278,143 @@ class AuraRetailGUI(tk.Tk):
         self.s2_rec_method.config(text=method)
         self.s2_rec_txnid.config(text=txn_id)
 
-    # --- TAB 3: Inventory ---
+    # --- TAB 3: Shop & Cart ---
     def _build_scenario_3(self, parent):
-        tk.Label(parent, text="Inventory & Bundles", font=FONTS["title"], bg=COLORS["bg"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 5))
-        tk.Label(parent, text="Composite product bundles and hardware-dependent availability.", font=FONTS["normal"], bg=COLORS["bg"], fg=COLORS["muted"]).pack(anchor="w", pady=(0, 25))
+        tk.Label(parent, text="Shop & Cart", font=FONTS["title"], bg=COLORS["bg"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 5))
+        tk.Label(parent, text="Browse catalog, add items to cart, and process unified checkout.", font=FONTS["normal"], bg=COLORS["bg"], fg=COLORS["muted"]).pack(anchor="w", pady=(0, 25))
 
         container = tk.Frame(parent, bg=COLORS["bg"])
         container.pack(fill="both", expand=True)
-        container.columnconfigure(0, weight=1); container.columnconfigure(1, weight=0)
+        container.columnconfigure(0, weight=3) # Catalog
+        container.columnconfigure(1, weight=2) # Cart
 
-        lp = tk.Frame(container, bg=COLORS["card"], padx=20, pady=20)
-        lp.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        tk.Label(lp, text="System Stock", font=FONTS["header"], bg=COLORS["card"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 10))
+        # --- Left Panel: Catalog ---
+        self.catalog_frame = tk.Frame(container, bg=COLORS["card"], padx=20, pady=20)
+        self.catalog_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        tk.Label(self.catalog_frame, text="Product Catalog", font=FONTS["header"], bg=COLORS["card"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 10))
         
-        tree_frame = tk.Frame(lp, bg=COLORS["card"])
-        tree_frame.pack(fill="both", expand=True)
-        self.tree = ttk.Treeview(tree_frame, columns=("Price", "Qty", "Req", "Avail"), show="tree headings", height=12)
-        self.tree.heading("#0", text="Item")
-        self.tree.heading("Price", text="Price")
-        self.tree.heading("Qty", text="Stock")
-        self.tree.heading("Req", text="H/W Req")
-        self.tree.heading("Avail", text="Status")
-        self.tree.column("#0", width=220)
-        self.tree.column("Price", width=80, anchor="center")
-        self.tree.column("Qty", width=80, anchor="center")
-        self.tree.column("Req", width=100, anchor="center")
-        self.tree.column("Avail", width=80, anchor="center")
-        self.tree.pack(side="left", fill="both", expand=True)
+        self.catalog_canvas = tk.Canvas(self.catalog_frame, bg=COLORS["card"], highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.catalog_frame, orient="vertical", command=self.catalog_canvas.yview)
+        self.catalog_inner = tk.Frame(self.catalog_canvas, bg=COLORS["card"])
         
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
+        self.catalog_inner.bind("<Configure>", lambda e: self.catalog_canvas.configure(scrollregion=self.catalog_canvas.bbox("all")))
+        self.catalog_canvas.create_window((0, 0), window=self.catalog_inner, anchor="nw", width=450)
+        self.catalog_canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.catalog_canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        self._populate_tree()
-
-        rp = tk.Frame(container, bg=COLORS["card"], padx=20, pady=20, width=300)
-        rp.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
-        rp.pack_propagate(False)
-        tk.Label(rp, text="Control Center", font=FONTS["header"], bg=COLORS["card"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 15))
+        # --- Right Panel: Cart & Checkout ---
+        self.cart_frame = tk.Frame(container, bg=COLORS["card"], padx=20, pady=20)
+        self.cart_frame.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        self.cart_frame.pack_propagate(False)
+        tk.Label(self.cart_frame, text="Your Cart", font=FONTS["header"], bg=COLORS["card"], fg=COLORS["accent"]).pack(anchor="w", pady=(0, 10))
         
-        tk.Button(rp, text="Simulate Purchase (Water)", font=FONTS["normal"], bg=COLORS["sidebar"], fg=COLORS["accent"], bd=0, pady=10, command=self._s3_purchase).pack(fill="x", pady=4)
-        tk.Button(rp, text="Quick Restock (Water)", font=FONTS["normal"], bg=COLORS["sidebar"], fg=COLORS["muted"], bd=0, pady=10, command=self._s3_restock).pack(fill="x", pady=4)
-        tk.Button(rp, text="Refresh Inventory", font=FONTS["normal"], bg=COLORS["card"], fg=COLORS["muted"], bd=0, pady=10, command=self._populate_tree).pack(fill="x", pady=(20, 0))
+        # Cart Items Treeview
+        tree_frame = tk.Frame(self.cart_frame, bg=COLORS["card"])
+        tree_frame.pack(fill="both", expand=True)
+        self.cart_tree = ttk.Treeview(tree_frame, columns=("Qty", "Price"), show="tree headings", height=6)
+        self.cart_tree.heading("#0", text="Item")
+        self.cart_tree.heading("Qty", text="Qty")
+        self.cart_tree.heading("Price", text="Total Price")
+        self.cart_tree.column("#0", width=150)
+        self.cart_tree.column("Qty", width=50, anchor="center")
+        self.cart_tree.column("Price", width=80, anchor="center")
+        self.cart_tree.pack(side="left", fill="both", expand=True)
+        
+        # Total Label
+        self.cart_total_lbl = tk.Label(self.cart_frame, text="Total: ₹ 0.00", font=FONTS["header"], bg=COLORS["card"], fg=COLORS["text"])
+        self.cart_total_lbl.pack(anchor="e", pady=(10, 10))
+        
+        # Checkout Actions
+        btn_frame = tk.Frame(self.cart_frame, bg=COLORS["card"])
+        btn_frame.pack(fill="x", pady=(0, 15))
+        tk.Button(btn_frame, text="Clear Cart", font=FONTS["small"], bg=COLORS["sidebar"], fg=COLORS["danger"], bd=0, padx=10, pady=8, command=self._clear_cart).pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        tk.Label(self.cart_frame, text="Payment Method", font=FONTS["small"], bg=COLORS["card"], fg=COLORS["muted"]).pack(anchor="w")
+        self.cart_method = tk.StringVar(value="UPI")
+        method_frame = tk.Frame(self.cart_frame, bg=COLORS["card"])
+        method_frame.pack(fill="x", pady=(5, 15))
+        for name in self.payment_providers.keys():
+            tk.Radiobutton(method_frame, text=name, variable=self.cart_method, value=name, font=FONTS["small"], bg=COLORS["card"], fg=COLORS["text"], activebackground=COLORS["card"], activeforeground=COLORS["accent"], selectcolor=COLORS["sidebar"], bd=0, padx=5).pack(side="left")
 
-        tk.Label(rp, text="Recent Activity", font=FONTS["small"], bg=COLORS["card"], fg=COLORS["muted"]).pack(anchor="w", pady=(20, 5))
-        self.s3_status_frame = tk.Frame(rp, bg=COLORS["sidebar"], pady=15, padx=15)
-        self.s3_status_frame.pack(fill="x")
-        self.s3_status_lbl = tk.Label(self.s3_status_frame, text="Ready", font=FONTS["normal"], bg=COLORS["sidebar"], fg=COLORS["success"], wraplength=250)
-        self.s3_status_lbl.pack(fill="both")
+        tk.Button(self.cart_frame, text="Checkout", font=FONTS["header"], bg=COLORS["accent"], fg=COLORS["bg"], bd=0, pady=12, command=self._checkout_cart).pack(fill="x")
+        
+        self.cart_status_lbl = tk.Label(self.cart_frame, text="Ready", font=FONTS["small"], bg=COLORS["card"], fg=COLORS["muted"], wraplength=250)
+        self.cart_status_lbl.pack(pady=(15, 0))
 
-    def _s3_set_status(self, msg, success=True):
-        self.s3_status_lbl.config(text=msg, fg=COLORS["success"] if success else COLORS["danger"])
+        self._populate_catalog()
+        self._refresh_cart_view()
 
-    def _populate_tree(self):
-        for item in self.tree.get_children(): self.tree.delete(item)
+    def _populate_catalog(self):
+        for widget in self.catalog_inner.winfo_children():
+            widget.destroy()
+            
         items = self.facade.list_inventory()
-        for obj in items:
-            req = "Yes" if getattr(obj, '_requires_refrigeration', False) else "-"
-            self.tree.insert("", "end", text=obj.get_name(), values=(f"{obj.get_price():.2f}", obj.get_stock(), req, str(obj.is_available())))
+        for i, obj in enumerate(items):
+            frame = tk.Frame(self.catalog_inner, bg=COLORS["sidebar"], pady=10, padx=15)
+            frame.pack(fill="x", pady=5)
+            
+            info_frame = tk.Frame(frame, bg=COLORS["sidebar"])
+            info_frame.pack(side="left", fill="both", expand=True)
+            
+            tk.Label(info_frame, text=obj.get_name(), font=FONTS["header"], bg=COLORS["sidebar"], fg=COLORS["text"]).pack(anchor="w")
+            tk.Label(info_frame, text=f"Price: ₹ {obj.get_price():.2f}  |  Stock: {obj.get_stock()}", font=FONTS["small"], bg=COLORS["sidebar"], fg=COLORS["muted"]).pack(anchor="w")
+            
+            req_fridge = getattr(obj, '_requires_refrigeration', False)
+            if req_fridge:
+                tk.Label(info_frame, text="Requires Refrigeration", font=("Segoe UI", 8), bg=COLORS["sidebar"], fg=COLORS["accent_dim"]).pack(anchor="w")
+            
+            avail = obj.is_available()
+            btn_state = "normal" if avail else "disabled"
+            btn_color = COLORS["accent"] if avail else COLORS["muted"]
+            btn_text = "Add to Cart" if avail else "Unavailable"
+            
+            btn = tk.Button(frame, text=btn_text, font=FONTS["small"], bg=btn_color, fg=COLORS["bg"] if avail else COLORS["sidebar"], bd=0, padx=15, pady=8, state=btn_state, command=lambda o=obj: self._add_to_cart(o.get_name()))
+            btn.pack(side="right", padx=(10, 0))
 
-    def _s3_purchase(self):
-        success = self.facade.purchase_item("Water Bottle", 1)
-        self._s3_set_status("Purchase successful!" if success else "Purchase failed.", success=success)
-        if success: messagebox.showinfo("Purchase Complete", "Water Bottle purchased.")
-        else: messagebox.showerror("Purchase Failed", "Could not purchase Water Bottle.")
-        self._populate_tree()
+    def _add_to_cart(self, item_name):
+        self.cart[item_name] = self.cart.get(item_name, 0) + 1
+        self._refresh_cart_view()
+        self.cart_status_lbl.config(text=f"Added {item_name} to cart.", fg=COLORS["success"])
 
-    def _s3_restock(self):
-        success = self.facade.restock_inventory("Water Bottle", 10)
-        self._s3_set_status("Restock successful!" if success else "Restock failed.", success=success)
-        if success: messagebox.showinfo("Restock Complete", "Added 10 Water Bottles.")
-        self._populate_tree()
+    def _clear_cart(self):
+        self.cart.clear()
+        self._refresh_cart_view()
+        self.cart_status_lbl.config(text="Cart cleared.", fg=COLORS["muted"])
+
+    def _refresh_cart_view(self):
+        for item in self.cart_tree.get_children():
+            self.cart_tree.delete(item)
+            
+        total_price = 0.0
+        for item_name, qty in self.cart.items():
+            obj = self.proxy.get_item(item_name, role="admin")
+            if obj:
+                price = obj.get_price() * qty
+                total_price += price
+                self.cart_tree.insert("", "end", text=item_name, values=(qty, f"₹ {price:.2f}"))
+                
+        self.cart_total_lbl.config(text=f"Total: ₹ {total_price:.2f}")
+
+    def _checkout_cart(self):
+        if not self.cart:
+            messagebox.showwarning("Cart Empty", "Add items to your cart before checking out.")
+            return
+            
+        self.kiosk.payment = self.payment_providers[self.cart_method.get()]
+        success = self.facade.purchase_cart(self.cart)
+        
+        if success:
+            messagebox.showinfo("Checkout Complete", "Purchase successful! Items dispensed.")
+            self.cart.clear()
+            self._refresh_cart_view()
+            self._populate_catalog()
+            self.cart_status_lbl.config(text="Checkout successful.", fg=COLORS["success"])
+        else:
+            messagebox.showerror("Checkout Failed", "Transaction failed or cancelled. Payment rolled back.")
+            self.cart_status_lbl.config(text="Checkout failed.", fg=COLORS["danger"])
+            self._populate_catalog()
 
 if __name__ == "__main__":
     app = AuraRetailGUI()
