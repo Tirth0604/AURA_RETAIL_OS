@@ -129,8 +129,13 @@ class Product(IInventoryItem):
         self._refrigeration_available = available
 
     def __repr__(self) -> str:
+<<<<<<< HEAD
         avail = "YES" if self.is_available() else "NO"
         return f"Product({self._name!r}, INR {self._price:.2f}, stock={self._stock}) [{avail}]"
+=======
+        avail = "✓" if self.is_available() else "✗"
+        return f"Product({self._name!r}, ₹{self._price:.2f}, stock={self._stock}) [{avail}]"
+>>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
 
 # ─── Composite: Composite Node ────────────────────────────────────────────────
@@ -186,9 +191,15 @@ class ProductBundle(IInventoryItem):
         }
 
     def __repr__(self) -> str:
+<<<<<<< HEAD
         avail = "YES" if self.is_available() else "NO"
         return (
             f"ProductBundle({self._name!r}, INR {self.get_price():.2f}, "
+=======
+        avail = "✓" if self.is_available() else "✗"
+        return (
+            f"ProductBundle({self._name!r}, ₹{self.get_price():.2f}, "
+>>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
             f"stock={self.get_stock()}, items={len(self._items)}) [{avail}]"
         )
 
@@ -280,7 +291,11 @@ class InventoryProxy(InventoryAccess):
             "result": result,
         }
         self._access_log.append(entry)
+<<<<<<< HEAD
         print(f"  [InventoryProxy LOG] role={role!r} op={operation!r} target={target!r} -> {result}")
+=======
+        print(f"  [InventoryProxy LOG] role={role!r} op={operation!r} target={target!r} → {result}")
+>>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
     def _authorize(self, role: str, operation: str) -> bool:
         allowed = self._PERMISSIONS.get(role, set())

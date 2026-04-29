@@ -139,7 +139,11 @@ class Dispenser:
         """
         old_name = self._hardware.get_hardware_name()
         self._hardware = new_hardware
+<<<<<<< HEAD
         print(f"  [Dispenser] Hardware replaced: {old_name} -> {new_hardware.get_hardware_name()}")
+=======
+        print(f"  [Dispenser] Hardware replaced: {old_name} → {new_hardware.get_hardware_name()}")
+>>>>>>> 1d63b70f812d10221d5c92df9cf3a89bfd7914f8
 
     def dispense_item(self, item: str) -> bool:
         """High-level dispense operation delegated to hardware implementor."""
