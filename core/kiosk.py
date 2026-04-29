@@ -185,6 +185,111 @@ class PurchaseItemCommand(IKioskCommand):
         )
 
 
+class PurchaseCartCommand(IKioskCommand):
+    """
+    Command: Encapsulates a multi-item cart purchase operation.
+    execute() → check all → process single payment → dispense all → reduce stock all
+    undo()    → refund payment → retract all → restore stock all
+    Implements Atomic Transaction constraint for multiple items.
+    """
+
+    def __init__(self, kiosk, cart: dict[str, int], payment_provider):
+        self._kiosk = kiosk
+        self._cart = cart  # {item_name: quantity}
+        self._provider = payment_provider
+        self._transaction_record = None
+        self._executed = False
+        self._dispensed_items = []  # track what was actually dispensed
+
+    def execute(self) -> bool:
+        print(f"\n  [PurchaseCartCommand] Executing cart purchase: {self._cart}")
+
+        total_price = 0.0
+        total_quantity = sum(self._cart.values())
+
+        # 1. Pre-check inventory and limits for all items
+        registry = CentralRegistry()
+        is_emergency = registry.get_config("mode") == "emergency"
+        limit = registry.get_config("emergency_purchase_limit", 2)
+
+        if is_emergency and total_quantity > limit:
+            print(f"  [PurchaseCartCommand] FAILED: Total quantity {total_quantity} exceeds emergency limit {limit}.")
+            return False
+
+        for item_name, qty in self._cart.items():
+            item = self._kiosk.inventory.get_item(item_name, role="kiosk")
+            if not item or not item.is_available():
+                print(f"  [PurchaseCartCommand] FAILED: '{item_name}' unavailable.")
+                return False
+            if item.get_stock() < qty:
+                print(f"  [PurchaseCartCommand] FAILED: Insufficient stock for '{item_name}'.")
+                return False
+            total_price += item.get_price() * qty
+
+        total_price = round(total_price, 2)
+
+        # 2. Process single payment
+        desc = f"cart_purchase:{len(self._cart)}_items"
+        self._transaction_record = self._provider.process_payment(total_price, desc)
+        
+        from payment.payment import TransactionStatus, persist_transaction
+        if self._transaction_record["status"] != TransactionStatus.SUCCESS:
+            print(f"  [PurchaseCartCommand] FAILED: Payment failed.")
+            return False
+
+        # 3. Dispense items iteratively
+        for item_name, qty in self._cart.items():
+            for _ in range(qty):
+                dispensed = self._kiosk.dispenser.dispense_item(item_name)
+                if dispensed:
+                    self._dispensed_items.append(item_name)
+                else:
+                    # Atomic rollback on any failure
+                    print(f"  [PurchaseCartCommand] Dispense failed for '{item_name}'. Initiating rollback...")
+                    self.undo()
+                    return False
+
+        # 4. Update inventory
+        for item_name, qty in self._cart.items():
+            self._kiosk.inventory.update_stock(item_name, -qty, role="kiosk")
+
+        # 5. Persist transaction
+        persist_transaction(self._transaction_record)
+
+        self._executed = True
+        print(f"  [PurchaseCartCommand] SUCCESS. TXN: {self._transaction_record['transaction_id']}")
+        return True
+
+    def undo(self) -> bool:
+        if not self._transaction_record:
+            print("  [PurchaseCartCommand] No payment to undo.")
+            return False
+            
+        print(f"  [PurchaseCartCommand] Undoing cart purchase...")
+
+        # Refund payment
+        self._provider.refund(self._transaction_record["transaction_id"])
+
+        # Retract dispensed items
+        for item_name in self._dispensed_items:
+            self._kiosk.dispenser.retract_item(item_name)
+            
+        if self._executed:
+            # Only restore stock if the execution was fully successful and stock was actually reduced
+            for item_name, qty in self._cart.items():
+                self._kiosk.inventory.update_stock(item_name, qty, role="kiosk")
+
+        self._executed = False
+        return True
+
+    def log(self) -> str:
+        txn_id = self._transaction_record["transaction_id"] if self._transaction_record else "N/A"
+        return (
+            f"PurchaseCartCommand | cart={self._cart} "
+            f"executed={self._executed} txn={txn_id}"
+        )
+
+
 class RefundCommand(IKioskCommand):
     """Command: Encapsulates a refund operation."""
 
@@ -304,6 +409,14 @@ class KioskInterface:
         """External-facing purchase operation. Delegates to PurchaseItemCommand."""
         print(f"\n[KioskInterface] purchase_item('{item_name}', qty={quantity})")
         cmd = PurchaseItemCommand(self._kiosk, item_name, quantity, self._kiosk.payment)
+        return self._kiosk.execute_command(cmd)
+
+    def purchase_cart(self, cart: dict[str, int]) -> bool:
+        """External-facing multi-item purchase operation. Delegates to PurchaseCartCommand."""
+        print(f"\n[KioskInterface] purchase_cart({cart})")
+        if not cart:
+            return False
+        cmd = PurchaseCartCommand(self._kiosk, cart, self._kiosk.payment)
         return self._kiosk.execute_command(cmd)
 
     def refund_transaction(self, transaction_id: str) -> bool:
