@@ -119,6 +119,18 @@ def add_module(mod_type: str):
         raise HTTPException(status_code=400, detail="Unknown module type")
     return {"status": "success", "message": f"{mod_type.title()} module added"}
 
+@app.delete("/api/hardware/module/{mod_type}")
+def remove_module_api(mod_type: str):
+    facade.remove_hardware_module(mod_type)
+    return {"status": "success", "message": f"{mod_type.title()} module removed"}
+
+@app.post("/api/return")
+def return_item(req: PurchaseRequest):
+    success = facade.restock_inventory(req.item_name, req.quantity)
+    if not success:
+        raise HTTPException(status_code=400, detail="Return failed")
+    return {"status": "success", "message": f"Returned {req.quantity} {req.item_name} to stock"}
+
 # Serve Frontend
 @app.get("/", response_class=HTMLResponse)
 def read_root():

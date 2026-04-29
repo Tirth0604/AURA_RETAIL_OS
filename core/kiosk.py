@@ -385,12 +385,45 @@ class AuraKiosk:
 
     def add_module(self, module_class, **kwargs):
         """Dynamically attach a hardware decorator module at runtime."""
-        from hardware.modules import HardwareModule
         if self.hardware_module is None:
             from hardware.modules import BaseKioskHardware
             self.hardware_module = BaseKioskHardware()
         self.hardware_module = module_class(self.hardware_module, **kwargs)
         print(f"  [AuraKiosk] Module added. Active stack: {self.hardware_module.get_module_name()}")
+
+    def remove_module(self, module_type_name: str):
+        """Removes a hardware decorator from the stack by re-linking the chain."""
+        from hardware.modules import NetworkModule, RefrigerationModule, SolarMonitoringModule
+        
+        if self.hardware_module is None:
+            return
+
+        # Case 1: The top-most module is the target
+        top = self.hardware_module
+        is_target = False
+        if module_type_name == 'network' and isinstance(top, NetworkModule): is_target = True
+        elif module_type_name == 'fridge' and isinstance(top, RefrigerationModule): is_target = True
+        elif module_type_name == 'solar' and isinstance(top, SolarMonitoringModule): is_target = True
+
+        if is_target:
+            self.hardware_module = getattr(top, '_base_module', None)
+            print(f"  [AuraKiosk] Module '{module_type_name}' removed from top.")
+            return
+
+        # Case 2: Target is deeper in the chain
+        curr = top
+        while hasattr(curr, '_base_module'):
+            next_mod = curr._base_module
+            is_target = False
+            if module_type_name == 'network' and isinstance(next_mod, NetworkModule): is_target = True
+            elif module_type_name == 'fridge' and isinstance(next_mod, RefrigerationModule): is_target = True
+            elif module_type_name == 'solar' and isinstance(next_mod, SolarMonitoringModule): is_target = True
+            
+            if is_target:
+                curr._base_module = getattr(next_mod, '_base_module', None)
+                print(f"  [AuraKiosk] Module '{module_type_name}' removed from chain.")
+                return
+            curr = next_mod
 
 
 # ─── Facade: KioskInterface ───────────────────────────────────────────────────
@@ -430,6 +463,12 @@ class KioskInterface:
         print(f"\n[KioskInterface] restock_inventory('{item_name}', qty={quantity})")
         cmd = RestockCommand(self._kiosk.inventory, item_name, quantity)
         return self._kiosk.execute_command(cmd)
+
+    def remove_hardware_module(self, module_type: str):
+        """External-facing hardware removal."""
+        print(f"\n[KioskInterface] remove_hardware_module('{module_type}')")
+        self._kiosk.remove_module(module_type)
+        return True
 
     def run_diagnostics(self) -> dict:
         """External-facing diagnostics. Returns derived operational status."""
